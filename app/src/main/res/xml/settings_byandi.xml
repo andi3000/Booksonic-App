@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:title="@string/settings.byandi_items_title">
+
+	<PreferenceCategory
+		android:title="@string/settings.byandi_items_title">
+
+		<CheckBoxPreference
+			android:title="@string/settings.auto_sleep_enabled"
+			android:summary="@string/settings.auto_sleep_enabled_summary"
+			android:key="autoSleepEnabled"
+			android:defaultValue="false"/>
+
+		<CheckBoxPreference
+			android:title="@string/settings.track_navigation_enabled"
+			android:summary="@string/settings.track_navigation_enabled_summary"
+			android:key="trackNavigationEnabled"
+			android:defaultValue="false"/>
+
+	</PreferenceCategory>
+
+</PreferenceScreen>

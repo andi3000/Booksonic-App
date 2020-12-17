@@ -186,6 +186,8 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			}
 		} else if ("cast".equals(name)) {
 			xml = R.xml.settings_cast;
+		} else if ("byandi".equals(name)) {
+			xml = R.xml.settings_byandi;
 		} else if ("help".equals(name)) {
 			xml = R.xml.settings_help;
 		}

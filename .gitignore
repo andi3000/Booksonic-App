@@ -16,3 +16,4 @@ local.properties
 *Thumbs.db
 /Popeens-DSub.iml
 /app/google/release
+*.iml

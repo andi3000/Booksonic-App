@@ -879,11 +879,11 @@ public class NowPlayingFragment extends SubsonicFragment implements OnGestureLis
 						switch (chosenOption) {
 							// All options are in minutes, but pass length of milliseconds
 							// so multiply (minutes * 60 seconds * 1000 milliseconds)
-							case 0: startTimer(300000); break;
-							case 1: startTimer(600000); break;
-							case 2: startTimer(900000); break;
-							case 3: startTimer(1800000); break;
-							case 4: startTimer(3600000); break;
+							case 0: startTimer(300000); break; // 5 min
+							case 1: startTimer(600000); break; // 10 min
+							case 2: startTimer(900000); break; // 15 min
+							case 3: startTimer(1800000); break; // 30 min
+							case 4: startTimer(3600000); break; // 60 min
 							case 5: startTimer((progressBar.getMax() - progressBar.getProgress()));
 								// This tends to overrun slightly into the next song if the current song is playing
 								// since starting the timer takes several milliseconds.  There should probably be

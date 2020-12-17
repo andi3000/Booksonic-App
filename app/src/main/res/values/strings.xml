@@ -730,4 +730,9 @@
 	<string name="error_incorrect_password">This password is incorrect</string>
 	<string name="error_field_required">This field is required</string>
 	<string name="widget.1x1" translatable="false">Booksonic (1x1)</string>
+    <string name="settings.byandi_items_title">By Andi</string>
+	<string name="settings.auto_sleep_enabled">Auto Sleep</string>
+	<string name="settings.auto_sleep_enabled_summary">Weather or not to active Sleep Mode automatically</string>
+	<string name="settings.track_navigation_enabled">Track Navigation</string>
+	<string name="settings.track_navigation_enabled_summary">Wether or not to activate Track Navigation instead of rewin/fast-forward</string>
 </resources>

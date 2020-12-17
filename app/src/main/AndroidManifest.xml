@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="github.popeen.dsub"
+	xmlns:tools="http://schemas.android.com/tools"
+	package="github.popeen.dsub"
           android:installLocation="internalOnly">
           
     <instrumentation android:name="android.test.InstrumentationTestRunner"
@@ -40,7 +41,8 @@
     	android:backupAgent="github.popeen.dsub.util.SettingsBackupAgent"
     	android:icon="@drawable/launch"
     	android:theme="@style/Theme.DSub.Light"
-		android:largeHeap="true">
+		android:largeHeap="true"
+		tools:ignore="MissingTvBanner">
     	
         <uses-library android:name="android.test.runner" />
 

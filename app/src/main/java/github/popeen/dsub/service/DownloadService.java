@@ -1071,7 +1071,12 @@ public class DownloadService extends Service {
 	}
 
 	public synchronized boolean shouldFastForward() {
-		return size() == 1 || (currentPlaying != null && !currentPlaying.isSong());
+		SharedPreferences prefs = Util.getPreferences(this);
+		if(prefs.getBoolean(Constants.PREFERENCES_KEY_BYANDI_TRACK_NAVIGATION, false)) {
+			return false;
+		} else {
+			return size() == 1 || (currentPlaying != null && !currentPlaying.isSong());
+		}
 	}
 
 	public synchronized boolean isForeground() {
@@ -1402,6 +1407,13 @@ public class DownloadService extends Service {
 				if(playerState != PREPARING) {
 					mediaPlayer.start();
 					applyPlaybackParamsMain();
+					SharedPreferences prefs = Util.getPreferences(this);
+					if(prefs.getBoolean(Constants.PREFERENCES_KEY_BYANDI_AUTO_SLEEP_MODE, false)) {
+						if (!this.getSleepTimer()) {
+							setSleepTimerDuration(1800000); // 30 min
+							startSleepTimer();
+						}
+					}
 				} else {
 					// Otherwise, we need to set it up to start when done preparing
 					autoPlayStart = true;
