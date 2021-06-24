@@ -13,9 +13,9 @@ android {
 	defaultConfig {
 		applicationId "github.popeen.dsub"
 		minSdkVersion 15
-		targetSdkVersion 28
-		versionCode 58
-		versionName '2009'
+		targetSdkVersion 29
+		versionCode 60
+		versionName '2103.2'
 		setProperty("archivesBaseName", "Booksonic $versionName")
 		resConfigs "sv", "ru"
 	}

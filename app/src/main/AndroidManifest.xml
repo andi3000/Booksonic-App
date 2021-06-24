@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-	xmlns:tools="http://schemas.android.com/tools"
-	package="github.popeen.dsub"
+		  package="github.popeen.dsub"
           android:installLocation="internalOnly">
           
     <instrumentation android:name="android.test.InstrumentationTestRunner"
@@ -23,7 +22,6 @@
 	<uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 	<uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>
 	<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-	<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 	<uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
 	<uses-feature android:name="android.hardware.touchscreen" android:required="false" />
@@ -31,8 +29,6 @@
 	<uses-feature android:name="android.hardware.microphone" android:required="false" />
 	<uses-feature android:name="android.hardware.wifi" android:required="false" />
 	<uses-feature android:name="android.software.leanback" android:required="false"/>
-	<uses-feature android:name="android.hardware.location" android:required="false"/>
-	<uses-feature android:name="android.hardware.location.network" android:required="false"/>
 
     <supports-screens android:anyDensity="true" android:xlargeScreens="true" android:largeScreens="true" android:normalScreens="true" android:smallScreens="true"/>
 
@@ -41,8 +37,7 @@
     	android:backupAgent="github.popeen.dsub.util.SettingsBackupAgent"
     	android:icon="@drawable/launch"
     	android:theme="@style/Theme.DSub.Light"
-		android:largeHeap="true"
-		tools:ignore="MissingTvBanner">
+		android:largeHeap="true">
     	
         <uses-library android:name="android.test.runner" />
 

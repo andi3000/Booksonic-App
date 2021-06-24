@@ -17,3 +17,4 @@ local.properties
 /Popeens-DSub.iml
 /app/google/release
 *.iml
+.DS_Store
