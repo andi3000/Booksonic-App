@@ -1071,7 +1071,12 @@ public class DownloadService extends Service {
 	}
 
 	public synchronized boolean shouldFastForward() {
-		return size() == 1 || (currentPlaying != null && !currentPlaying.isSong());
+		SharedPreferences prefs = Util.getPreferences(this);
+		if(prefs.getBoolean(Constants.PREFERENCES_KEY_BYANDI_TRACK_NAVIGATION, false)) {
+			return false;
+		} else {
+			return size() == 1 || (currentPlaying != null && !currentPlaying.isSong());
+		}
 	}
 
 	public synchronized boolean isForeground() {
