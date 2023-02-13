@@ -27,41 +27,30 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.appcompat.app.AlertDialog;
 import android.text.InputType;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import org.jsoup.Jsoup;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import github.popeen.dsub.R;
 import github.popeen.dsub.service.DownloadService;
@@ -69,7 +58,6 @@ import github.popeen.dsub.service.HeadphoneListenerService;
 import github.popeen.dsub.service.MusicService;
 import github.popeen.dsub.service.MusicServiceFactory;
 import github.popeen.dsub.util.Constants;
-import github.popeen.dsub.util.EnvironmentVariables;
 import github.popeen.dsub.util.FileUtil;
 import github.popeen.dsub.util.LoadingTask;
 import github.popeen.dsub.util.MediaRouteManager;
@@ -81,13 +69,11 @@ import github.popeen.dsub.view.ErrorDialog;
 public class SettingsFragment extends PreferenceCompatFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
 	private final static String TAG = SettingsFragment.class.getSimpleName();
 
-	private final Map<String, ServerSettings> serverSettings = new LinkedHashMap<String, ServerSettings>();
+	private final Map<String, ServerSettings> serverSettings = new LinkedHashMap<>();
 	private boolean testingConnection;
 	private ListPreference theme;
 	private ListPreference maxBitrateWifi;
 	private ListPreference maxBitrateMobile;
-	private ListPreference maxVideoBitrateWifi;
-	private ListPreference maxVideoBitrateMobile;
 	private ListPreference networkTimeout;
 	private CacheLocationPreference cacheLocation;
 	private ListPreference preloadCountWifi;
@@ -95,11 +81,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	private ListPreference keepPlayedCount;
 	private ListPreference tempLoss;
 	private ListPreference pauseDisconnect;
-	private Preference addServerPreference;
-	private Preference serverHelpPreference;
 	private PreferenceCategory serversCategory;
-	private ListPreference songPressAction;
-	private ListPreference videoPlayer;
 	private ListPreference syncInterval;
 	private CheckBoxPreference syncEnabled;
 	private CheckBoxPreference syncWifi;
@@ -110,10 +92,13 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	private ListPreference replayGainType;
 	private Preference replayGainBump;
 	private Preference replayGainUntagged;
-	private String internalSSID;
-	private String internalSSIDDisplay;
 	private EditTextPreference cacheSize;
 	private ListPreference openToTab;
+
+	private CheckBoxPreference enableInternetMetadata;
+	private CheckBoxPreference aiMetadata;
+	private CheckBoxPreference googleMetadata;
+	private CheckBoxPreference boktipsetMetadata;
 
 	private int serverCount = 3;
 	private SharedPreferences settings;
@@ -165,6 +150,8 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			xml = R.xml.settings_sync;
 		} else if("playback".equals(name)) {
 			xml = R.xml.settings_playback;
+		} else if("metadata".equals(name)) {
+			xml = R.xml.settings_metadata;
 		} else if("servers".equals(name)) {
 			// if(Util.installedFromPlayStore(context) || !Util.isSignedByPopeen(context)) {
 			xml = R.xml.settings_servers;
@@ -224,8 +211,6 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			} else {
 				context.stopService(serviceIntent);
 			}
-		} else if(Constants.PREFERENCES_KEY_THEME.equals(key)) {
-			String value = sharedPreferences.getString(key, null);
 		} else if(Constants.PREFERENCES_KEY_DLNA_CASTING_ENABLED.equals(key)) {
 			DownloadService downloadService = DownloadService.getInstance();
 			if(downloadService != null) {
@@ -247,17 +232,15 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 	protected void onInitPreferences(PreferenceScreen preferenceScreen) {
 		this.setTitle(preferenceScreen.getTitle());
 
-		internalSSID = Util.getSSID(context);
+		String internalSSID = Util.getSSID(context);
 		if (internalSSID == null) {
 			internalSSID = "";
 		}
-		internalSSIDDisplay = context.getResources().getString(R.string.settings_server_local_network_ssid_hint, internalSSID);
+		String internalSSIDDisplay = context.getResources().getString(R.string.settings_server_local_network_ssid_hint, internalSSID);
 
 		theme = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_THEME);
 		maxBitrateWifi = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_MAX_BITRATE_WIFI);
-		maxBitrateMobile = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_MAX_BITRATE_MOBILE);;
-		//maxVideoBitrateWifi = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_MAX_VIDEO_BITRATE_WIFI);
-		//maxVideoBitrateMobile = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_MAX_VIDEO_BITRATE_MOBILE);
+		maxBitrateMobile = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_MAX_BITRATE_MOBILE);
 		networkTimeout = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_NETWORK_TIMEOUT);
 		cacheLocation = (CacheLocationPreference) this.findPreference(Constants.PREFERENCES_KEY_CACHE_LOCATION);
 		preloadCountWifi = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_PRELOAD_COUNT_WIFI);
@@ -266,10 +249,8 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		tempLoss = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_TEMP_LOSS);
 		pauseDisconnect = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_PAUSE_DISCONNECT);
 		serversCategory = (PreferenceCategory) this.findPreference(Constants.PREFERENCES_KEY_SERVER_KEY);
-		addServerPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_ADD);
-		serverHelpPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_HELP);
-		//videoPlayer = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_VIDEO_PLAYER);
-		songPressAction = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_SONG_PRESS_ACTION);
+		Preference addServerPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_ADD);
+		Preference serverHelpPreference = this.findPreference(Constants.PREFERENCES_KEY_SERVER_HELP);
 		syncInterval = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_SYNC_INTERVAL);
 		syncEnabled = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_SYNC_ENABLED);
 		syncWifi = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_SYNC_WIFI);
@@ -283,40 +264,37 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		cacheSize = (EditTextPreference) this.findPreference(Constants.PREFERENCES_KEY_CACHE_SIZE);
 		openToTab = (ListPreference) this.findPreference(Constants.PREFERENCES_KEY_OPEN_TO_TAB);
 
+		enableInternetMetadata = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_ENABLE_INTERNET_METADATA);
+		aiMetadata = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_ALLOW_AI);
+		googleMetadata = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_ALLOW_GOOGLE);
+		boktipsetMetadata = (CheckBoxPreference) this.findPreference(Constants.PREFERENCES_KEY_ALLOW_BOKTIPSET);
+
 		settings = Util.getPreferences(context);
 		serverCount = settings.getInt(Constants.PREFERENCES_KEY_SERVER_COUNT, 1);
 
 		if(cacheSize != null) {
-			this.findPreference("clearCache").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Util.confirmDialog(context, R.string.common_delete, R.string.common_confirm_message_cache, new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							new LoadingTask<Void>(context, false) {
-								@Override
-								protected Void doInBackground() throws Throwable {
-									FileUtil.deleteMusicDirectory(context);
-									FileUtil.deleteSerializedCache(context);
-									FileUtil.deleteArtworkCache(context);
-									FileUtil.deleteAvatarCache(context);
-									return null;
-								}
+			this.findPreference("clearCache").setOnPreferenceClickListener(preference -> {
+				Util.confirmDialog(context, R.string.common_delete, R.string.common_confirm_message_cache, (dialog, which) -> new LoadingTask<Void>(context, false) {
+					@Override
+					protected Void doInBackground() throws Throwable {
+						FileUtil.deleteMusicDirectory(context);
+						FileUtil.deleteSerializedCache(context);
+						FileUtil.deleteArtworkCache(context);
+						FileUtil.deleteAvatarCache(context);
+						return null;
+					}
 
-								@Override
-								protected void done(Void result) {
-									Util.toast(context, R.string.settings_cache_clear_complete);
-								}
+					@Override
+					protected void done(Void result) {
+						Util.toast(context, R.string.settings_cache_clear_complete);
+					}
 
-								@Override
-								protected void error(Throwable error) {
-									Util.toast(context, getErrorMessage(error), false);
-								}
-							}.execute();
-						}
-					});
-					return false;
-				}
+					@Override
+					protected void error(Throwable error) {
+						Util.toast(context, getErrorMessage(error), false);
+					}
+				}.execute());
+				return false;
 			});
 
 
@@ -326,53 +304,30 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 
 		if((PreferenceCategory) this.findPreference("helpCategory") != null) {
 
-			this.findPreference("visitFaq").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Uri uri = Uri.parse("https://booksonic.org/faq");
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-					startActivity(browserIntent);
-					return true;
-				}
+			this.findPreference("visitFaq").setOnPreferenceClickListener(preference -> {
+				Util.openWebsite(context, "https://booksonic.org/faq");
+				return true;
 			});
 
-			this.findPreference("visitSubredit").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Uri uri = Uri.parse("https://www.reddit.com/r/Booksonic/");
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-					startActivity(browserIntent);
-					return true;
-				}
+			this.findPreference("visitSubredit").setOnPreferenceClickListener(preference -> {
+				Util.openWebsite(context, "https://www.reddit.com/r/Booksonic/");
+				return true;
 			});
 
-			this.findPreference("sendLogfile").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Util.sendLogfile(context);
-					return true;
-				}
+			this.findPreference("sendLogfile").setOnPreferenceClickListener(preference -> {
+				Util.sendLogfile(context);
+				return true;
 			});
 
-			this.findPreference("visitWindowsGuide").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Uri uri = Uri.parse("https://booksonic.org/how");
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-					startActivity(browserIntent);
-					return true;
-				}
+			this.findPreference("visitWindowsGuide").setOnPreferenceClickListener(preference -> {
+				Util.openWebsite(context, "https://booksonic.org/how");
+				return true;
 			});
 
-			this.findPreference("visitDockerGuide").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Uri uri = Uri.parse("https://hub.docker.com/r/linuxserver/booksonic/");
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-					startActivity(browserIntent);
-					return true;
-				}
-			});
+			this.findPreference("visitDockerGuide").setOnPreferenceClickListener(preference -> {
+                Util.openWebsite(context, "https://hub.docker.com/r/linuxserver/booksonic-air");
+                return true;
+            });
 
 
 			try {
@@ -384,79 +339,63 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 				aboutInfo += "\nBuild Number: " + packageInfo.versionCode;
 				aboutInfo += "\nSignature: " + new String(Base64.encode(md.digest(), 0));
 				this.findPreference("copyAppInfo").setSummary("Click here to copy the information about your app version to the clipboard\n\n" + aboutInfo);
+
 			}catch(Exception e){ this.findPreference("copyAppInfo").setSummary("Click here to copy the information about your app version to the clipboard\n\nCould not get app data"); }
 
-			this.findPreference("copyAppInfo").setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
-					android.content.ClipData clip = android.content.ClipData.newPlainText("Copied to clipboard", preference.getSummary().toString().split("\n\n")[1]);
-					clipboard.setPrimaryClip(clip);
-					Util.toast(getActivity(), "Copied to clipboard");
-					return true;
-				}
-			});
+			this.findPreference("copyAppInfo").setOnPreferenceClickListener(preference -> {
+                android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getActivity().getSystemService(Context.CLIPBOARD_SERVICE);
+                android.content.ClipData clip = android.content.ClipData.newPlainText("Copied to clipboard", preference.getSummary().toString().split("\n\n")[1]);
+                clipboard.setPrimaryClip(clip);
+                Util.toast(getActivity(), "Copied to clipboard");
+                return true;
+            });
 		}
 
 		if(syncEnabled != null) {
-			this.findPreference(Constants.PREFERENCES_KEY_SYNC_ENABLED).setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-				@Override
-				public boolean onPreferenceChange(Preference preference, Object newValue) {
-					Boolean syncEnabled = (Boolean) newValue;
+			this.findPreference(Constants.PREFERENCES_KEY_SYNC_ENABLED).setOnPreferenceChangeListener((preference, newValue) -> {
+				Boolean syncEnabled = (Boolean) newValue;
 
-					Account account = new Account(Constants.SYNC_ACCOUNT_NAME, Constants.SYNC_ACCOUNT_TYPE);
-					ContentResolver.setSyncAutomatically(account, Constants.SYNC_ACCOUNT_PLAYLIST_AUTHORITY, syncEnabled);
-					ContentResolver.setSyncAutomatically(account, Constants.SYNC_ACCOUNT_PODCAST_AUTHORITY, syncEnabled);
+				Account account = new Account(Constants.SYNC_ACCOUNT_NAME, Constants.SYNC_ACCOUNT_TYPE);
+				ContentResolver.setSyncAutomatically(account, Constants.SYNC_ACCOUNT_PLAYLIST_AUTHORITY, syncEnabled);
+				ContentResolver.setSyncAutomatically(account, Constants.SYNC_ACCOUNT_PODCAST_AUTHORITY, syncEnabled);
 
-					return true;
-				}
+				return true;
 			});
-			syncInterval.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-				@Override
-				public boolean onPreferenceChange(Preference preference, Object newValue) {
-					Integer syncInterval = Integer.parseInt(((String) newValue));
+			syncInterval.setOnPreferenceChangeListener((preference, newValue) -> {
+				Integer syncInterval = Integer.parseInt(((String) newValue));
 
-					Account account = new Account(Constants.SYNC_ACCOUNT_NAME, Constants.SYNC_ACCOUNT_TYPE);
-					ContentResolver.addPeriodicSync(account, Constants.SYNC_ACCOUNT_PLAYLIST_AUTHORITY, new Bundle(), 60L * syncInterval);
-					ContentResolver.addPeriodicSync(account, Constants.SYNC_ACCOUNT_PODCAST_AUTHORITY, new Bundle(), 60L * syncInterval);
+				Account account = new Account(Constants.SYNC_ACCOUNT_NAME, Constants.SYNC_ACCOUNT_TYPE);
+				ContentResolver.addPeriodicSync(account, Constants.SYNC_ACCOUNT_PLAYLIST_AUTHORITY, new Bundle(), 60L * syncInterval);
+				ContentResolver.addPeriodicSync(account, Constants.SYNC_ACCOUNT_PODCAST_AUTHORITY, new Bundle(), 60L * syncInterval);
 
-					return true;
-				}
+				return true;
 			});
 		}
 
 		if(serversCategory != null) {
-			addServerPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					serverCount++;
-					int instance = serverCount;
-					serversCategory.addPreference(addServer(serverCount));
+			addServerPreference.setOnPreferenceClickListener(preference -> {
+				serverCount++;
+				int instance = serverCount;
+				serversCategory.addPreference(addServer(serverCount));
 
-					SharedPreferences.Editor editor = settings.edit();
-					editor.putInt(Constants.PREFERENCES_KEY_SERVER_COUNT, serverCount);
-					// Reset set folder ID
-					editor.putString(Constants.PREFERENCES_KEY_MUSIC_FOLDER_ID + instance, null);
-					editor.putString(Constants.PREFERENCES_KEY_SERVER_URL + instance, "http://yourhost");
-					editor.putString(Constants.PREFERENCES_KEY_SERVER_NAME + instance, getResources().getString(R.string.settings_server_unused));
-					editor.commit();
+				SharedPreferences.Editor editor = settings.edit();
+				editor.putInt(Constants.PREFERENCES_KEY_SERVER_COUNT, serverCount);
+				// Reset set folder ID
+				editor.putString(Constants.PREFERENCES_KEY_MUSIC_FOLDER_ID + instance, null);
+				editor.putString(Constants.PREFERENCES_KEY_SERVER_URL + instance, "http://yourhost");
+				editor.putString(Constants.PREFERENCES_KEY_SERVER_NAME + instance, getResources().getString(R.string.settings_server_unused));
+				editor.commit();
 
-					ServerSettings ss = new ServerSettings(instance);
-					serverSettings.put(String.valueOf(instance), ss);
-					ss.update();
+				ServerSettings ss = new ServerSettings(instance);
+				serverSettings.put(String.valueOf(instance), ss);
+				ss.update();
 
-					return true;
-				}
+				return true;
 			});
 
-			serverHelpPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					Uri uri = Uri.parse("https://popeen.com/2016/01/14/how-to-stream-audiobooks-to-your-phone-with-booksonic/");
-					Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
-					startActivity(browserIntent);
-					return true;
-				}
+			serverHelpPreference.setOnPreferenceClickListener(preference -> {
+				Util.openWebsite(context, "https://popeen.com/2016/01/14/how-to-stream-audiobooks-to-your-phone-with-booksonic/");
+				return true;
 			});
 
 			serversCategory.setOrderingAsAdded(false);
@@ -501,9 +440,7 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 
 		if(cacheSize != null) {
 			maxBitrateWifi.setSummary(maxBitrateWifi.getEntry());
-			maxBitrateMobile.setSummary(maxBitrateMobile.getEntry());;
-			//maxVideoBitrateWifi.setSummary(maxVideoBitrateWifi.getEntry());
-			//maxVideoBitrateMobile.setSummary(maxVideoBitrateMobile.getEntry());
+			maxBitrateMobile.setSummary(maxBitrateMobile.getEntry());
 			networkTimeout.setSummary(networkTimeout.getEntry());
 			cacheLocation.setSummary(cacheLocation.getText());
 			preloadCountWifi.setSummary(preloadCountWifi.getEntry());
@@ -565,6 +502,20 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			replayGainType.setSummary(replayGainType.getEntry());
 
 		}
+
+		if(enableInternetMetadata != null) {
+
+			if(enableInternetMetadata.isChecked()) {
+				aiMetadata.setEnabled(true);
+				googleMetadata.setEnabled(true);
+				boktipsetMetadata.setEnabled(true);
+			} else {
+				aiMetadata.setEnabled(false);
+				googleMetadata.setEnabled(false);
+				boktipsetMetadata.setEnabled(false);
+			}
+
+		}
 		for (ServerSettings ss : serverSettings.values()) {
 			ss.update();
 		}
@@ -583,18 +534,15 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		screen.setKey(Constants.PREFERENCES_KEY_SERVER_KEY + instance);
 		screen.setOrder(instance);
 
-		screen.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-			@Override
-			public boolean onPreferenceClick(Preference preference) {
-				SettingsFragment newFragment = new SettingsFragment();
+		screen.setOnPreferenceClickListener(preference -> {
+			SettingsFragment newFragment = new SettingsFragment();
 
-				Bundle args = new Bundle();
-				args.putInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, instance);
-				newFragment.setArguments(args);
+			Bundle args = new Bundle();
+			args.putInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, instance);
+			newFragment.setArguments(args);
 
-				replaceFragment(newFragment);
-				return false;
-			}
+			replaceFragment(newFragment);
+			return false;
 		});
 
 		return screen;
@@ -721,12 +669,9 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		serverOpenBrowser.setKey(Constants.PREFERENCES_KEY_OPEN_BROWSER);
 		serverOpenBrowser.setPersistent(false);
 		serverOpenBrowser.setTitle(R.string.settings_server_open_browser);
-		serverOpenBrowser.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-			@Override
-			public boolean onPreferenceClick(Preference preference) {
-				openInBrowser(instance);
-				return true;
-			}
+		serverOpenBrowser.setOnPreferenceClickListener(preference -> {
+			openInBrowser(instance);
+			return true;
 		});
 
 		Preference serverRemoveServerPreference = new Preference(context);
@@ -734,53 +679,44 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 		serverRemoveServerPreference.setPersistent(false);
 		serverRemoveServerPreference.setTitle(R.string.settings_servers_remove);
 
-		serverRemoveServerPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-			@Override
-			public boolean onPreferenceClick(Preference preference) {
-				Util.confirmDialog(context, R.string.common_delete, screen.getTitle().toString(), new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						// Reset values to null so when we ask for them again they are new
-						serverNamePreference.setText(null);
-						serverUrlPreference.setText(null);
-						serverUsernamePreference.setText(null);
-						serverPasswordPreference.setText(null);
+		serverRemoveServerPreference.setOnPreferenceClickListener(preference -> {
+			Util.confirmDialog(context, R.string.common_delete, screen.getTitle().toString(), (dialog, which) -> {
+				// Reset values to null so when we ask for them again they are new
+				serverNamePreference.setText(null);
+				serverUrlPreference.setText(null);
+				serverUsernamePreference.setText(null);
+				serverPasswordPreference.setText(null);
 
-						// Don't use Util.getActiveServer since it is 0 if offline
-						int activeServer = Util.getPreferences(context).getInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, 1);
-						for (int i = instance; i <= serverCount; i++) {
-							Util.removeInstanceName(context, i, activeServer);
-						}
+				// Don't use Util.getActiveServer since it is 0 if offline
+				int activeServer = Util.getPreferences(context).getInt(Constants.PREFERENCES_KEY_SERVER_INSTANCE, 1);
+				for (int i = instance; i <= serverCount; i++) {
+					Util.removeInstanceName(context, i, activeServer);
+				}
 
-						serverCount--;
-						SharedPreferences.Editor editor = settings.edit();
-						editor.putInt(Constants.PREFERENCES_KEY_SERVER_COUNT, serverCount);
-						editor.commit();
+				serverCount--;
+				SharedPreferences.Editor editor = settings.edit();
+				editor.putInt(Constants.PREFERENCES_KEY_SERVER_COUNT, serverCount);
+				editor.commit();
 
-						removeCurrent();
+				removeCurrent();
 
-						SubsonicFragment parentFragment = context.getCurrentFragment();
-						if(parentFragment instanceof SettingsFragment) {
-							SettingsFragment serverSelectionFragment = (SettingsFragment) parentFragment;
-							serverSelectionFragment.checkForRemoved();
-						}
-					}
-				});
+				SubsonicFragment parentFragment = context.getCurrentFragment();
+				if(parentFragment instanceof SettingsFragment) {
+					SettingsFragment serverSelectionFragment = (SettingsFragment) parentFragment;
+					serverSelectionFragment.checkForRemoved();
+				}
+			});
 
-				return true;
-			}
+			return true;
 		});
 
 		Preference serverTestConnectionPreference = new Preference(context);
 		serverTestConnectionPreference.setKey(Constants.PREFERENCES_KEY_TEST_CONNECTION + instance);
 		serverTestConnectionPreference.setPersistent(false);
 		serverTestConnectionPreference.setTitle(R.string.settings_test_connection_title);
-		serverTestConnectionPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-			@Override
-			public boolean onPreferenceClick(Preference preference) {
-				testConnection(instance);
-				return false;
-			}
+		serverTestConnectionPreference.setOnPreferenceClickListener(preference -> {
+			testConnection(instance);
+			return false;
 		});
 
 		screen.addPreference(serverNamePreference);
@@ -815,14 +751,11 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 				new AlertDialog.Builder(context)
 						.setTitle("Location permission needed")
 						.setMessage("Location permission needed")
-						.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialogInterface, int i) {
-								//Prompt the user once explanation has been shown
-								ActivityCompat.requestPermissions(context,
-										new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-										99);
-							}
+						.setPositiveButton("Ok", (dialogInterface, i) -> {
+							//Prompt the user once explanation has been shown
+							ActivityCompat.requestPermissions(context,
+									new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+									99);
 						})
 						.create()
 						.show();
@@ -964,17 +897,14 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			new ErrorDialog(context, R.string.settings_invalid_url, false);
 			return;
 		}
-		Uri uriServer = Uri.parse(url);
 
-		Intent browserIntent = new Intent(Intent.ACTION_VIEW, uriServer);
-		startActivity(browserIntent);
+		Util.openWebsite(context, url);
 	}
 
 	private class ServerSettings {
 		private int instance;
 		private EditTextPreference serverName;
 		private EditTextPreference serverUrl;
-		private EditTextPreference serverLocalNetworkSSID;
 		private EditTextPreference serverInternalUrl;
 		private EditTextPreference username;
 		private PreferenceScreen screen;
@@ -984,59 +914,50 @@ public class SettingsFragment extends PreferenceCompatFragment implements Shared
 			screen = (PreferenceScreen) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_KEY + instance);
 			serverName = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_NAME + instance);
 			serverUrl = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_URL + instance);
-			serverLocalNetworkSSID = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_LOCAL_NETWORK_SSID + instance);
+			EditTextPreference serverLocalNetworkSSID = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_LOCAL_NETWORK_SSID + instance);
 			serverInternalUrl = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_SERVER_INTERNAL_URL + instance);
 			username = (EditTextPreference) SettingsFragment.this.findPreference(Constants.PREFERENCES_KEY_USERNAME + instance);
 
 			if(serverName != null) {
-				serverUrl.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-					@Override
-					public boolean onPreferenceChange(Preference preference, Object value) {
-						try {
-							String url = (String) value;
-							new URL(url);
-							if (url.contains(" ") || url.contains("@")) {
-								throw new Exception();
-							}
-						} catch (Exception x) {
-							new ErrorDialog(context, R.string.settings_invalid_url, false);
-							return false;
+				serverUrl.setOnPreferenceChangeListener((preference, value) -> {
+					try {
+						String url = (String) value;
+						new URL(url);
+						if (url.contains(" ") || url.contains("@")) {
+							throw new Exception();
 						}
-						return true;
+					} catch (Exception x) {
+						new ErrorDialog(context, R.string.settings_invalid_url, false);
+						return false;
 					}
+					return true;
 				});
-				serverInternalUrl.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-					@Override
-					public boolean onPreferenceChange(Preference preference, Object value) {
-						try {
-							String url = (String) value;
-							// Allow blank internal IP address
-							if ("".equals(url) || url == null) {
-								return true;
-							}
-
-							new URL(url);
-							if (url.contains(" ") || url.contains("@")) {
-								throw new Exception();
-							}
-						} catch (Exception x) {
-							new ErrorDialog(context, R.string.settings_invalid_url, false);
-							return false;
+				serverInternalUrl.setOnPreferenceChangeListener((preference, value) -> {
+					try {
+						String url = (String) value;
+						// Allow blank internal IP address
+						if ("".equals(url) || url == null) {
+							return true;
 						}
-						return true;
+
+						new URL(url);
+						if (url.contains(" ") || url.contains("@")) {
+							throw new Exception();
+						}
+					} catch (Exception x) {
+						new ErrorDialog(context, R.string.settings_invalid_url, false);
+						return false;
 					}
+					return true;
 				});
 
-				username.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
-					@Override
-					public boolean onPreferenceChange(Preference preference, Object value) {
-						String username = (String) value;
-						if (username == null || !username.equals(username.trim())) {
-							new ErrorDialog(context, R.string.settings_invalid_username, false);
-							return false;
-						}
-						return true;
+				username.setOnPreferenceChangeListener((preference, value) -> {
+					String username = (String) value;
+					if (username == null || !username.equals(username.trim())) {
+						new ErrorDialog(context, R.string.settings_invalid_username, false);
+						return false;
 					}
+					return true;
 				});
 			}
 		}
