@@ -18,6 +18,30 @@
  */
 package github.popeen.dsub.service;
 
+import static androidx.mediarouter.media.MediaRouter.RouteInfo;
+import static github.popeen.dsub.domain.PlayerState.COMPLETED;
+import static github.popeen.dsub.domain.PlayerState.DOWNLOADING;
+import static github.popeen.dsub.domain.PlayerState.IDLE;
+import static github.popeen.dsub.domain.PlayerState.PAUSED;
+import static github.popeen.dsub.domain.PlayerState.PAUSED_TEMP;
+import static github.popeen.dsub.domain.PlayerState.PREPARED;
+import static github.popeen.dsub.domain.PlayerState.PREPARING;
+import static github.popeen.dsub.domain.PlayerState.STARTED;
+import static github.popeen.dsub.domain.PlayerState.STOPPED;
+import static github.popeen.dsub.domain.RemoteControlState.LOCAL;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.ComponentCallbacks2;
@@ -36,24 +60,11 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.PowerManager;
+import android.util.Log;
+import android.view.KeyEvent;
 import androidx.collection.LruCache;
 import androidx.mediarouter.media.MediaRouteSelector;
 import androidx.mediarouter.media.MediaRouter;
-import android.util.Log;
-import android.view.KeyEvent;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import github.daneren2005.serverproxy.BufferProxy;
 import github.popeen.dsub.R;
 import github.popeen.dsub.activity.SubsonicActivity;
@@ -82,18 +93,6 @@ import github.popeen.dsub.util.Util;
 import github.popeen.dsub.util.compat.RemoteControlClientBase;
 import github.popeen.dsub.util.tags.BastpUtil;
 import github.popeen.dsub.view.UpdateView;
-
-import static androidx.mediarouter.media.MediaRouter.RouteInfo;
-import static github.popeen.dsub.domain.PlayerState.COMPLETED;
-import static github.popeen.dsub.domain.PlayerState.DOWNLOADING;
-import static github.popeen.dsub.domain.PlayerState.IDLE;
-import static github.popeen.dsub.domain.PlayerState.PAUSED;
-import static github.popeen.dsub.domain.PlayerState.PAUSED_TEMP;
-import static github.popeen.dsub.domain.PlayerState.PREPARED;
-import static github.popeen.dsub.domain.PlayerState.PREPARING;
-import static github.popeen.dsub.domain.PlayerState.STARTED;
-import static github.popeen.dsub.domain.PlayerState.STOPPED;
-import static github.popeen.dsub.domain.RemoteControlState.LOCAL;
 
 /**
  * @author Sindre Mehus
@@ -2169,7 +2168,7 @@ public class DownloadService extends Service {
 		sleepTimer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				pause();
+				pause(true);
 				sleepTimer.cancel();
 				sleepTimer.purge();
 				sleepTimer = null;
@@ -2771,7 +2770,7 @@ public class DownloadService extends Service {
 		applyPlaybackParams(mediaPlayer);
 		SharedPreferences prefs = Util.getPreferences(this);
 		int autoSleepValue = Integer.parseInt(prefs.getString(Constants.PREFERENCES_KEY_AUTO_SLEEP_MODE, "0"));
-		if(autoSleepValue > 0) {
+		if (autoSleepValue > 0) {
 			if (!this.getSleepTimer()) {
 				setSleepTimerDuration(autoSleepValue);
 				startSleepTimer();

@@ -198,6 +198,7 @@ public final class Constants {
 	public static final String PREFERENCES_KEY_REWIND_INTERVAL = "rewindInterval";
 	public static final String PREFERENCES_KEY_FASTFORWARD_INTERVAL = "fastforwardInterval";
 
+	public static final String PREFERENCES_KEY_BYANDI_TRACK_NAVIGATION = "byAndiTrackNavigationEnabled";
 	public static final String PREFERENCES_KEY_AUTO_SLEEP_MODE = "autoSleepValue";
 
 	public static final String PREFERENCES_KEY_FORCE_PASSWORD_API = "forcePasswordApi";

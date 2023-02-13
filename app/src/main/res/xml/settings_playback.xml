@@ -27,7 +27,7 @@
 		<CheckBoxPreference
 			android:title="@string/settings.track_navigation_enabled"
 			android:summary="@string/settings.track_navigation_enabled_summary"
-			android:key="trackNavigationEnabled"
+			android:key="byAndiTrackNavigationEnabled"
 			android:defaultValue="false"/>
 
 		<ListPreference
