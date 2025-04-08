@@ -5,7 +5,7 @@
     <application android:label="@string/common.appname"
          android:backupAgent="github.popeen.dsub.util.SettingsBackupAgent"
          android:icon="@drawable/launch"
-         android:theme="@style/Theme.DSub.Light"
+         android:theme="@style/Theme.DSub.Dark"
          android:largeHeap="true">
 
         <meta-data
